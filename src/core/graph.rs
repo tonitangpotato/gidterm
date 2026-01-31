@@ -56,14 +56,56 @@ impl Graph {
 
     /// Get all tasks ready to run (dependencies met)
     pub fn get_ready_tasks(&self) -> Vec<String> {
-        // TODO: Implement DAG traversal
-        Vec::new()
+        self.tasks
+            .iter()
+            .filter_map(|(id, task)| {
+                if self.can_start(id) && task.status == "pending" {
+                    Some(id.clone())
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
-    /// Check if a task can start
-    pub fn can_start(&self, _task_id: &str) -> bool {
-        // TODO: Check dependencies
-        true
+    /// Check if a task can start (all dependencies done)
+    pub fn can_start(&self, task_id: &str) -> bool {
+        let Some(task) = self.tasks.get(task_id) else {
+            return false;
+        };
+
+        // If no dependencies, can start
+        let Some(deps) = &task.depends_on else {
+            return true;
+        };
+
+        // All dependencies must be in "done" status
+        deps.iter().all(|dep_id| {
+            self.tasks
+                .get(dep_id)
+                .map(|dep_task| dep_task.status == "done")
+                .unwrap_or(false)
+        })
+    }
+
+    /// Update task status
+    pub fn update_task_status(&mut self, task_id: &str, new_status: &str) -> Result<()> {
+        if let Some(task) = self.tasks.get_mut(task_id) {
+            task.status = new_status.to_string();
+            Ok(())
+        } else {
+            anyhow::bail!("Task {} not found", task_id)
+        }
+    }
+
+    /// Get task by ID
+    pub fn get_task(&self, task_id: &str) -> Option<&Task> {
+        self.tasks.get(task_id)
+    }
+
+    /// Get all tasks
+    pub fn all_tasks(&self) -> &HashMap<String, Task> {
+        &self.tasks
     }
 }
 
