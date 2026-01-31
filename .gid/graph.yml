@@ -299,7 +299,7 @@ tasks:
     type: BugFix
     description: Wrap commands in sh -c for proper shell execution (pipes, &&, quotes)
     priority: critical
-    status: pending
+    status: done
     estimated_hours: 1
     depends_on: [implement_pty_manager]
     component: PTYManager
@@ -309,7 +309,7 @@ tasks:
     type: BugFix
     description: Store Child handle, implement signals (SIGTERM/SIGKILL), get real exit codes
     priority: critical
-    status: pending
+    status: done
     estimated_hours: 2
     depends_on: [fix_command_execution]
     component: PTYManager
@@ -319,7 +319,7 @@ tasks:
     type: BugFix
     description: Fix blocking I/O in async context - use spawn_blocking for PTY reads
     priority: critical
-    status: pending
+    status: done
     estimated_hours: 2
     depends_on: [fix_process_lifecycle]
     component: Executor
@@ -331,7 +331,7 @@ tasks:
     type: Development
     description: Connect ParserRegistry to App, feed task output through parsers
     priority: high
-    status: pending
+    status: done
     estimated_hours: 2
     depends_on: [fix_async_blocking, parser_registry]
     tags: [semantic, integration]
@@ -340,7 +340,7 @@ tasks:
     type: Development
     description: Display progress bars and extracted metrics in TUI
     priority: high
-    status: pending
+    status: done
     estimated_hours: 2
     depends_on: [wire_semantic_to_app]
     component: LiveDashboard
@@ -362,7 +362,7 @@ tasks:
     type: BugFix
     description: Cap task output history in App to prevent unbounded growth
     priority: medium
-    status: pending
+    status: done
     estimated_hours: 1
     depends_on: [fix_async_blocking]
     tags: [bugfix, quality]
@@ -371,7 +371,7 @@ tasks:
     type: Refactor
     description: Remove unused GidTermEngine, clean up warnings
     priority: low
-    status: pending
+    status: done
     estimated_hours: 1
     tags: [refactor, quality]
 
