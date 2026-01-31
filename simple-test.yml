@@ -1,0 +1,35 @@
+metadata:
+  project: "Simple Test"
+  version: "0.1.0"
+
+nodes: {}
+
+tasks:
+  hello:
+    type: "test"
+    description: "Print hello"
+    command: "echo Hello from task 1"
+    status: "pending"
+    priority: "high"
+  
+  world:
+    type: "test"
+    description: "Print world"
+    command: "echo World from task 2"
+    status: "pending"
+    priority: "high"
+    depends_on: ["hello"]
+  
+  list-files:
+    type: "test"
+    description: "List files"
+    command: "ls -la"
+    status: "pending"
+    depends_on: []
+  
+  final:
+    type: "test"
+    description: "Final task"
+    command: "echo All done!"
+    status: "pending"
+    depends_on: ["hello", "world", "list-files"]

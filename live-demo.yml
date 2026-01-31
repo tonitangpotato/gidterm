@@ -1,0 +1,38 @@
+metadata:
+  project: "Live Demo - Long Running Tasks"
+  version: "0.1.0"
+  description: "Demonstrates real-time TUI updates"
+
+nodes: {}
+
+tasks:
+  counter-1:
+    type: "service"
+    description: "Count to 20 slowly"
+    command: "bash -c 'for i in {1..20}; do echo \"Counter 1: $i/20\"; sleep 1; done'"
+    status: "pending"
+    priority: "high"
+  
+  counter-2:
+    type: "service"
+    description: "Count to 15 slowly"
+    command: "bash -c 'for i in {1..15}; do echo \"Counter 2: $i/15\"; sleep 1.5; done'"
+    status: "pending"
+    priority: "high"
+    depends_on: []
+  
+  watcher:
+    type: "service"
+    description: "Watch current directory"
+    command: "bash -c 'for i in {1..10}; do echo \"Watching... scan $i\"; ls -1 | head -5; sleep 2; done'"
+    status: "pending"
+    priority: "medium"
+    depends_on: ["counter-1"]
+  
+  final:
+    type: "test"
+    description: "Final summary"
+    command: "bash -c 'echo \"All tasks completed!\"; echo \"Total time: about 30 seconds\"; date'"
+    status: "pending"
+    priority: "low"
+    depends_on: ["counter-1", "counter-2", "watcher"]

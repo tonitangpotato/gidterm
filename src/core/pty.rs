@@ -1,52 +1,37 @@
-//! PTY Manager - Create and manage pseudo-terminals
+//! PTY (pseudo-terminal) management - spawn and monitor processes
 
 use anyhow::Result;
-use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
-use std::collections::HashMap;
-use std::io::{Read, Write};
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use std::io::{BufRead, BufReader};
 use std::sync::{Arc, Mutex};
 
-/// Handle to a managed PTY
+/// PTY handle for a single task
+#[derive(Clone)]
 pub struct PTYHandle {
     pub id: String,
-    pair: Arc<Mutex<portable_pty::PtyPair>>,
-    reader: Option<Box<dyn Read + Send>>,
-    writer: Option<Box<dyn Write + Send>>,
+    output_history: Arc<Mutex<Vec<String>>>,
+    reader: Arc<Mutex<Option<BufReader<Box<dyn std::io::Read + Send>>>>>,
 }
 
-/// PTY Manager for creating and controlling terminals
-pub struct PTYManager {
-    pty_system: NativePtySystem,
-    ptys: HashMap<String, PTYHandle>,
-    next_id: usize,
-}
+impl PTYHandle {
+    /// Spawn a new process in a PTY
+    pub fn spawn(task_id: &str, command: &str) -> Result<Self> {
+        log::info!("Spawning PTY for task {}: {}", task_id, command);
 
-impl PTYManager {
-    /// Create a new PTY manager
-    pub fn new() -> Self {
-        Self {
-            pty_system: NativePtySystem::default(),
-            ptys: HashMap::new(),
-            next_id: 0,
-        }
-    }
-
-    /// Spawn a new PTY with command
-    pub fn spawn(&mut self, command: &str) -> Result<String> {
-        // Parse command
+        // Parse command into parts
         let parts: Vec<&str> = command.split_whitespace().collect();
         if parts.is_empty() {
             anyhow::bail!("Empty command");
         }
 
-        let mut cmd_builder = CommandBuilder::new(parts[0]);
-        if parts.len() > 1 {
-            for arg in &parts[1..] {
-                cmd_builder.arg(arg);
-            }
+        // Build command
+        let mut cmd = CommandBuilder::new(parts[0]);
+        for arg in &parts[1..] {
+            cmd.arg(arg);
         }
 
-        // Create PTY pair
+        // Create PTY
+        let pty_system = native_pty_system();
         let pty_size = PtySize {
             rows: 24,
             cols: 80,
@@ -54,64 +39,76 @@ impl PTYManager {
             pixel_height: 0,
         };
 
-        let pair = self.pty_system.openpty(pty_size)?;
+        let pair = pty_system.openpty(pty_size)?;
 
-        // Spawn the command
-        let _child = pair.slave.spawn_command(cmd_builder)?;
+        // Spawn command
+        let _child = pair.slave.spawn_command(cmd)?;
+        drop(pair.slave); // Close slave side
 
-        // Get reader and writer
+        // Get reader
         let reader = pair.master.try_clone_reader()?;
-        let writer = pair.master.take_writer()?;
+        let buf_reader = BufReader::new(reader);
 
-        // Generate ID
-        let id = format!("pty-{}", self.next_id);
-        self.next_id += 1;
-
-        // Store handle
-        let handle = PTYHandle {
-            id: id.clone(),
-            pair: Arc::new(Mutex::new(pair)),
-            reader: Some(reader),
-            writer: Some(writer),
-        };
-
-        self.ptys.insert(id.clone(), handle);
-
-        Ok(id)
+        Ok(Self {
+            id: task_id.to_string(),
+            output_history: Arc::new(Mutex::new(Vec::new())),
+            reader: Arc::new(Mutex::new(Some(buf_reader))),
+        })
     }
 
-    /// Read output from PTY
-    pub fn read_output(&mut self, pty_id: &str, buf: &mut [u8]) -> Result<usize> {
-        let handle = self
-            .ptys
-            .get_mut(pty_id)
-            .ok_or_else(|| anyhow::anyhow!("PTY {} not found", pty_id))?;
-
-        if let Some(reader) = &mut handle.reader {
-            Ok(reader.read(buf)?)
+    /// Read one line of output
+    pub async fn read_line(&mut self) -> Result<Option<String>> {
+        let mut reader_guard = self.reader.lock().unwrap();
+        
+        if let Some(reader) = reader_guard.as_mut() {
+            let mut line = String::new();
+            
+            // Try to read a line (non-blocking would be better, but this works for now)
+            match reader.read_line(&mut line) {
+                Ok(0) => {
+                    // EOF - process ended
+                    *reader_guard = None;
+                    Ok(None)
+                }
+                Ok(_) => {
+                    // Got a line
+                    let trimmed = line.trim_end().to_string();
+                    
+                    // Store in history
+                    {
+                        let mut history = self.output_history.lock().unwrap();
+                        history.push(trimmed.clone());
+                        
+                        // Keep last 1000 lines
+                        if history.len() > 1000 {
+                            history.remove(0);
+                        }
+                    }
+                    
+                    Ok(Some(trimmed))
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    // No data available yet
+                    Ok(Some(String::new()))
+                }
+                Err(e) => Err(e.into()),
+            }
         } else {
-            anyhow::bail!("No reader available")
+            // Reader already closed
+            Ok(None)
         }
     }
 
-    /// Write input to PTY
-    pub fn write_input(&mut self, pty_id: &str, data: &[u8]) -> Result<()> {
-        let handle = self
-            .ptys
-            .get_mut(pty_id)
-            .ok_or_else(|| anyhow::anyhow!("PTY {} not found", pty_id))?;
-
-        if let Some(writer) = &mut handle.writer {
-            writer.write_all(data)?;
-            writer.flush()?;
-            Ok(())
-        } else {
-            anyhow::bail!("No writer available")
-        }
+    /// Get output history
+    pub fn get_output(&self) -> Vec<String> {
+        self.output_history.lock().unwrap().clone()
     }
 
-    /// Get all PTY IDs
-    pub fn list_ptys(&self) -> Vec<String> {
-        self.ptys.keys().cloned().collect()
+    /// Kill the process
+    pub fn kill(&mut self) -> Result<()> {
+        // Close reader (this will kill the process)
+        let mut reader = self.reader.lock().unwrap();
+        *reader = None;
+        Ok(())
     }
 }

@@ -1,0 +1,105 @@
+metadata:
+  project: "AgentVerse MVP Test"
+  version: "0.1.0"
+  description: "Testing gidterm with AgentVerse tasks"
+
+nodes:
+  database:
+    type: "infrastructure"
+    description: "Database layer"
+    layer: "infrastructure"
+    status: "pending"
+    priority: "critical"
+  
+  backend:
+    type: "service"
+    description: "Backend API service"
+    layer: "backend"
+    status: "pending"
+    priority: "high"
+    depends_on: ["database"]
+  
+  frontend:
+    type: "service"
+    description: "Frontend web app"
+    layer: "frontend"
+    status: "pending"
+    priority: "high"
+
+tasks:
+  start-postgres:
+    type: "service"
+    description: "Start PostgreSQL database"
+    command: "docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=dev postgres:15"
+    status: "pending"
+    priority: "critical"
+    component: "database"
+    tags: ["infrastructure", "database"]
+  
+  start-redis:
+    type: "service"
+    description: "Start Redis cache"
+    command: "docker run -d -p 6379:6379 redis:7"
+    status: "pending"
+    priority: "high"
+    component: "database"
+    tags: ["infrastructure", "cache"]
+  
+  backend-install:
+    type: "build"
+    description: "Install backend dependencies"
+    command: "cd backend && npm install"
+    status: "pending"
+    priority: "high"
+    depends_on: []
+    component: "backend"
+    estimated_hours: 1
+    tags: ["setup"]
+  
+  backend-migrate:
+    type: "build"
+    description: "Run database migrations"
+    command: "cd backend && npm run migrate"
+    status: "pending"
+    priority: "high"
+    depends_on: ["start-postgres", "backend-install"]
+    component: "backend"
+    tags: ["database"]
+  
+  backend-server:
+    type: "service"
+    description: "Start backend dev server"
+    command: "cd backend && npm run dev"
+    status: "pending"
+    priority: "high"
+    depends_on: ["backend-migrate", "start-redis"]
+    component: "backend"
+    tags: ["dev"]
+  
+  frontend-install:
+    type: "build"
+    description: "Install frontend dependencies"
+    command: "cd frontend && npm install"
+    status: "pending"
+    priority: "medium"
+    component: "frontend"
+    tags: ["setup"]
+  
+  frontend-server:
+    type: "service"
+    description: "Start frontend dev server"
+    command: "cd frontend && npm run dev"
+    status: "pending"
+    priority: "medium"
+    depends_on: ["frontend-install"]
+    component: "frontend"
+    tags: ["dev"]
+  
+  run-tests:
+    type: "test"
+    description: "Run integration tests"
+    command: "npm run test"
+    status: "pending"
+    priority: "medium"
+    depends_on: ["backend-server", "frontend-server"]
+    tags: ["testing"]

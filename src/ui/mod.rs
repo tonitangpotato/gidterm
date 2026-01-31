@@ -1,12 +1,14 @@
 //! UI layer - TUI and views
 
 mod dashboard;
+mod live;
 
 pub use dashboard::DashboardView;
+pub use live::render_live_dashboard;
 
 use anyhow::Result;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -33,30 +35,9 @@ impl TUI {
         Ok(Self { terminal })
     }
 
-    /// Run the TUI event loop
-    pub fn run<F>(&mut self, mut render_fn: F) -> Result<()>
-    where
-        F: FnMut(&mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<bool>,
-    {
-        loop {
-            // Render
-            let should_quit = render_fn(&mut self.terminal)?;
-            if should_quit {
-                break;
-            }
-
-            // Handle events
-            if event::poll(std::time::Duration::from_millis(100))? {
-                if let Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char('q') | KeyCode::Esc => break,
-                        _ => {}
-                    }
-                }
-            }
-        }
-
-        Ok(())
+    /// Get mutable reference to terminal
+    pub fn terminal(&mut self) -> &mut Terminal<CrosstermBackend<io::Stdout>> {
+        &mut self.terminal
     }
 }
 

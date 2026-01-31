@@ -54,6 +54,38 @@ impl Graph {
         Ok(graph)
     }
 
+    /// Load from gid project directory
+    pub fn from_gid_project(project_dir: &Path) -> Result<Self> {
+        let gid_path = project_dir.join(".gid/graph.yml");
+        if !gid_path.exists() {
+            anyhow::bail!("No .gid/graph.yml found in {:?}", project_dir);
+        }
+        Self::from_file(&gid_path)
+    }
+
+    /// Auto-detect and load graph from current directory
+    /// Priority:
+    /// 1. .gid/graph.yml (gid project)
+    /// 2. gidterm.yml (standalone config)
+    /// 3. Return error if none found
+    pub fn auto_load() -> Result<Self> {
+        // Try .gid/graph.yml first
+        let gid_path = Path::new(".gid/graph.yml");
+        if gid_path.exists() {
+            return Self::from_file(gid_path);
+        }
+
+        // Fall back to gidterm.yml
+        let standalone_path = Path::new("gidterm.yml");
+        if standalone_path.exists() {
+            return Self::from_file(standalone_path);
+        }
+
+        anyhow::bail!(
+            "No graph file found. Expected .gid/graph.yml or gidterm.yml in current directory."
+        )
+    }
+
     /// Get all tasks ready to run (dependencies met)
     pub fn get_ready_tasks(&self) -> Vec<String> {
         self.tasks

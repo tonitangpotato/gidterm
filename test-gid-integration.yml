@@ -1,0 +1,41 @@
+metadata:
+  project: "test-integration"
+  version: "1.0.0"
+  description: "Test gid integration and session persistence"
+
+nodes: {}
+
+tasks:
+  hello:
+    type: "shell"
+    description: "Print hello"
+    command: "echo 'Hello from gidterm!'"
+    status: "pending"
+  
+  world:
+    type: "shell"
+    description: "Print world"
+    command: "echo 'World!'; sleep 1; echo 'Done!'"
+    status: "pending"
+    depends_on: ["hello"]
+  
+  parallel1:
+    type: "shell"
+    description: "Parallel task 1"
+    command: "echo 'Parallel 1'; sleep 0.5"
+    status: "pending"
+    depends_on: ["world"]
+  
+  parallel2:
+    type: "shell"
+    description: "Parallel task 2"
+    command: "echo 'Parallel 2'; sleep 0.5"
+    status: "pending"
+    depends_on: ["world"]
+  
+  final:
+    type: "shell"
+    description: "Final task"
+    command: "echo 'All done!'"
+    status: "pending"
+    depends_on: ["parallel1", "parallel2"]
