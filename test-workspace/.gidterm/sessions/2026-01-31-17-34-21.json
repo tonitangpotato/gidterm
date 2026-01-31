@@ -1,0 +1,92 @@
+{
+  "id": "2026-01-31-17-34-21",
+  "project": "workspace",
+  "started_at": "2026-01-31T17:34:21.282Z",
+  "ended_at": null,
+  "tasks": {
+    "project-a:install": {
+      "task_id": "project-a:install",
+      "runs": [
+        {
+          "started": "2026-01-31T17:34:21.282198Z",
+          "ended": "2026-01-31T17:34:21.447369Z",
+          "status": "Done",
+          "output": [
+            "'Installing project-a...'; sleep 1"
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "project-a:dev": {
+      "task_id": "project-a:dev",
+      "runs": [
+        {
+          "started": "2026-01-31T17:34:21.618626Z",
+          "ended": "2026-01-31T17:34:21.781558Z",
+          "status": "Done",
+          "output": [
+            "'Project-A dev server running on :3000'; while true; do sleep 1; echo 'tick...'; done"
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "project-b:dev": {
+      "task_id": "project-b:dev",
+      "runs": [
+        {
+          "started": "2026-01-31T17:34:21.615393Z",
+          "ended": "2026-01-31T17:34:21.781519Z",
+          "status": "Done",
+          "output": [
+            "'Project-B dev server running on :8080'; while true; do sleep 1; echo 'watching files...'; done"
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "project-b:webpack": {
+      "task_id": "project-b:webpack",
+      "runs": [
+        {
+          "started": "2026-01-31T17:34:21.448613Z",
+          "ended": "2026-01-31T17:34:21.614140Z",
+          "status": "Done",
+          "output": [
+            "'Webpack bundling...'; sleep 2; echo 'Bundle ready!'"
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "project-a:build": {
+      "task_id": "project-a:build",
+      "runs": [
+        {
+          "started": "2026-01-31T17:34:21.451931Z",
+          "ended": "2026-01-31T17:34:21.614192Z",
+          "status": "Done",
+          "output": [
+            "'Building project-a...'; sleep 2; echo 'Build complete!'"
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "project-b:install": {
+      "task_id": "project-b:install",
+      "runs": [
+        {
+          "started": "2026-01-31T17:34:21.286819Z",
+          "ended": "2026-01-31T17:34:21.447415Z",
+          "status": "Done",
+          "output": [
+            "'Installing project-b...'; sleep 1"
+          ],
+          "exit_code": 0
+        }
+      ]
+    }
+  }
+}

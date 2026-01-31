@@ -1,6 +1,6 @@
 [package]
 name = "gidterm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["tonitangpotato <tonitangpotato@users.noreply.github.com>"]
 description = "Graph-Driven Semantic Terminal Controller - A semantic terminal controller that integrates project/task graphs with intelligent process management"

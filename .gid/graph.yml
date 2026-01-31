@@ -1,36 +1,35 @@
 # GidTerm Project Graph
-# Auto-generated and maintained by gid MCP tool
-# Last updated: 2026-01-31
+# Last updated: 2026-01-31 (Opus 4.5 audit)
 
 metadata:
   project: gidterm
-  version: 0.1.0
+  version: 0.2.0
   description: Graph-Driven Semantic Terminal Controller
   repository: https://github.com/tonitangpotato/gidterm
-  
+
 # ============================================================
 # PROJECT GRAPH - Architecture and Components
 # ============================================================
 
 nodes:
   # === Core Components ===
-  
+
   Core:
     type: Module
     description: Core engine library - can be integrated into other apps
     layer: core
-    status: planned
+    status: active
     priority: critical
-    
+
   GraphParser:
     type: Component
     description: Parse .gid/graph.yml and build task DAG
     layer: core
-    status: active
+    status: done
     priority: critical
     depends_on: [Core]
     path: src/core/graph.rs
-    
+
   PTYManager:
     type: Component
     description: PTY creation, I/O handling, signal control
@@ -39,53 +38,80 @@ nodes:
     priority: critical
     depends_on: [Core]
     path: src/core/pty.rs
-    
+
   Scheduler:
     type: Component
     description: Task dependency scheduling and execution
     layer: core
-    status: active
+    status: done
     priority: critical
     depends_on: [GraphParser]
     path: src/core/scheduler.rs
-    
+
+  Executor:
+    type: Component
+    description: Task executor with PTY lifecycle management
+    layer: core
+    status: active
+    priority: critical
+    depends_on: [PTYManager, Scheduler]
+    path: src/core/executor.rs
+
+  SessionManager:
+    type: Component
+    description: Session persistence and history tracking
+    layer: core
+    status: done
+    priority: high
+    depends_on: [Core]
+    path: src/session.rs
+
+  WorkspaceManager:
+    type: Component
+    description: Multi-project workspace discovery and management
+    layer: core
+    status: done
+    priority: high
+    depends_on: [GraphParser]
+    path: src/workspace.rs
+
   # === Semantic Layer ===
-  
+
   SemanticLayer:
     type: Module
     description: Semantic understanding of tasks
     layer: semantic
-    status: planned
+    status: active
     priority: high
     depends_on: [Core]
-    
+
   ParserRegistry:
     type: Component
     description: Register and manage output parsers
     layer: semantic
-    status: active
+    status: done
     priority: high
     depends_on: [SemanticLayer]
     path: src/semantic/registry.rs
-    
+
   RegexParser:
     type: Component
     description: Regex-based progress extraction
     layer: semantic
-    status: active
+    status: done
     priority: high
     depends_on: [ParserRegistry]
     path: src/semantic/parsers/regex.rs
-    
+
   MLTrainingParser:
     type: Component
     description: Parse ML training output (epoch, loss, accuracy)
     layer: semantic
-    status: active
+    status: done
     priority: medium
     depends_on: [RegexParser]
     path: src/semantic/parsers/ml_training.rs
-    
+
   BuildParser:
     type: Component
     description: Parse build task output
@@ -94,7 +120,7 @@ nodes:
     priority: medium
     depends_on: [RegexParser]
     path: src/semantic/parsers/build.rs
-    
+
   SemanticCommands:
     type: Component
     description: Template-based semantic command execution
@@ -103,17 +129,17 @@ nodes:
     priority: medium
     depends_on: [SemanticLayer]
     path: src/semantic/commands.rs
-    
+
   # === UI Layer ===
-  
+
   CLI:
     type: Module
     description: Command-line interface
     layer: ui
-    status: planned
+    status: active
     priority: high
     depends_on: [Core, SemanticLayer]
-    
+
   TUI:
     type: Component
     description: Terminal UI using ratatui
@@ -121,8 +147,17 @@ nodes:
     status: active
     priority: high
     depends_on: [CLI]
-    path: src/ui/tui.rs
-    
+    path: src/ui/mod.rs
+
+  LiveDashboard:
+    type: Component
+    description: Live dashboard with task grouping and output
+    layer: ui
+    status: active
+    priority: high
+    depends_on: [TUI]
+    path: src/ui/live.rs
+
   GraphView:
     type: Component
     description: Visualize task graph in TUI
@@ -130,17 +165,7 @@ nodes:
     status: planned
     priority: medium
     depends_on: [TUI]
-    path: src/ui/views/graph.rs
-    
-  DashboardView:
-    type: Component
-    description: Unified dashboard showing all tasks
-    layer: ui
-    status: active
-    priority: high
-    depends_on: [TUI]
-    path: src/ui/views/dashboard.rs
-    
+
   TerminalView:
     type: Component
     description: Focus on single task terminal output
@@ -148,45 +173,22 @@ nodes:
     status: planned
     priority: high
     depends_on: [TUI]
-    path: src/ui/views/terminal.rs
-    
-  # === Integration Layer (Future) ===
-  
-  WASMBindings:
-    type: Component
-    description: WASM bindings for web integration
-    layer: bindings
-    status: future
-    priority: low
-    depends_on: [Core]
-    path: src/bindings/wasm/mod.rs
-    
-  FFIBindings:
-    type: Component
-    description: FFI bindings for other languages
-    layer: bindings
-    status: future
-    priority: low
-    depends_on: [Core]
-    path: src/bindings/ffi/mod.rs
 
 # ============================================================
 # TASK GRAPH - Development Tasks
 # ============================================================
 
 tasks:
-  # === Phase 1: Foundation (Week 1-2) ===
-  
+  # === Phase 1: Foundation (DONE) ===
+
   setup_rust_project:
     type: Development
     description: Initialize Rust project with Cargo.toml
     priority: critical
     status: done
     estimated_hours: 2
-    assignee: tonitangpotato
     tags: [setup, phase1]
-    completed_at: 2026-01-31
-    
+
   implement_graph_parser:
     type: Development
     description: Implement .gid/graph.yml parser with serde
@@ -196,8 +198,7 @@ tasks:
     depends_on: [setup_rust_project]
     component: GraphParser
     tags: [core, phase1]
-    completed_at: 2026-01-31
-    
+
   implement_pty_manager:
     type: Development
     description: Implement PTY creation and I/O handling
@@ -207,8 +208,7 @@ tasks:
     depends_on: [setup_rust_project]
     component: PTYManager
     tags: [core, phase1]
-    completed_at: 2026-01-31
-    
+
   implement_scheduler:
     type: Development
     description: Implement DAG-based task scheduler
@@ -218,8 +218,7 @@ tasks:
     depends_on: [implement_graph_parser]
     component: Scheduler
     tags: [core, phase1]
-    completed_at: 2026-01-31
-    
+
   basic_tui:
     type: Development
     description: Basic TUI with task list and status
@@ -229,10 +228,9 @@ tasks:
     depends_on: [implement_scheduler, implement_pty_manager]
     component: TUI
     tags: [ui, phase1]
-    completed_at: 2026-01-31
-    
-  # === Phase 2: Semantic Layer (Week 3-4) ===
-  
+
+  # === Phase 2: Semantic Layer (PARTIAL) ===
+
   parser_registry:
     type: Development
     description: Build parser registry system
@@ -242,8 +240,7 @@ tasks:
     depends_on: [basic_tui]
     component: ParserRegistry
     tags: [semantic, phase2]
-    completed_at: 2026-01-31
-    
+
   regex_parser:
     type: Development
     description: Implement regex-based parser
@@ -253,8 +250,7 @@ tasks:
     depends_on: [parser_registry]
     component: RegexParser
     tags: [semantic, phase2]
-    completed_at: 2026-01-31
-    
+
   ml_training_parser:
     type: Development
     description: Parser for ML training output
@@ -264,40 +260,153 @@ tasks:
     depends_on: [regex_parser]
     component: MLTrainingParser
     tags: [semantic, phase2]
-    completed_at: 2026-01-31
-    
+
+  # === Added Features (DONE) ===
+
+  gid_integration:
+    type: Development
+    description: Auto-load graphs from .gid/graph.yml with smart detection
+    priority: high
+    status: done
+    estimated_hours: 2
+    depends_on: [implement_graph_parser]
+    component: GraphParser
+    tags: [core, integration]
+
+  session_persistence:
+    type: Development
+    description: Track task history across runs in .gidterm/sessions/
+    priority: high
+    status: done
+    estimated_hours: 3
+    depends_on: [basic_tui]
+    component: SessionManager
+    tags: [core, persistence]
+
+  multi_project_workspace:
+    type: Development
+    description: Manage multiple projects simultaneously with auto-discovery
+    priority: high
+    status: done
+    estimated_hours: 3
+    depends_on: [gid_integration, session_persistence]
+    component: WorkspaceManager
+    tags: [core, workspace]
+
+  # === P0: Critical Bug Fixes (NOW) ===
+
+  fix_command_execution:
+    type: BugFix
+    description: Wrap commands in sh -c for proper shell execution (pipes, &&, quotes)
+    priority: critical
+    status: pending
+    estimated_hours: 1
+    depends_on: [implement_pty_manager]
+    component: PTYManager
+    tags: [bugfix, p0]
+
+  fix_process_lifecycle:
+    type: BugFix
+    description: Store Child handle, implement signals (SIGTERM/SIGKILL), get real exit codes
+    priority: critical
+    status: pending
+    estimated_hours: 2
+    depends_on: [fix_command_execution]
+    component: PTYManager
+    tags: [bugfix, p0]
+
+  fix_async_blocking:
+    type: BugFix
+    description: Fix blocking I/O in async context - use spawn_blocking for PTY reads
+    priority: critical
+    status: pending
+    estimated_hours: 2
+    depends_on: [fix_process_lifecycle]
+    component: Executor
+    tags: [bugfix, p0]
+
+  # === P1: Connect Semantic Layer ===
+
+  wire_semantic_to_app:
+    type: Development
+    description: Connect ParserRegistry to App, feed task output through parsers
+    priority: high
+    status: pending
+    estimated_hours: 2
+    depends_on: [fix_async_blocking, parser_registry]
+    tags: [semantic, integration]
+
+  tui_progress_bars:
+    type: Development
+    description: Display progress bars and extracted metrics in TUI
+    priority: high
+    status: pending
+    estimated_hours: 2
+    depends_on: [wire_semantic_to_app]
+    component: LiveDashboard
+    tags: [ui, semantic]
+
+  # === P2: Code Quality ===
+
+  use_status_enum:
+    type: Refactor
+    description: Replace status strings with proper TaskStatus enum in Graph
+    priority: medium
+    status: pending
+    estimated_hours: 1
+    depends_on: [fix_async_blocking]
+    component: GraphParser
+    tags: [refactor, quality]
+
+  cap_output_history:
+    type: BugFix
+    description: Cap task output history in App to prevent unbounded growth
+    priority: medium
+    status: pending
+    estimated_hours: 1
+    depends_on: [fix_async_blocking]
+    tags: [bugfix, quality]
+
+  remove_dead_code:
+    type: Refactor
+    description: Remove unused GidTermEngine, clean up warnings
+    priority: low
+    status: pending
+    estimated_hours: 1
+    tags: [refactor, quality]
+
+  # === Phase 3: Advanced UI ===
+
   semantic_commands:
     type: Development
-    description: Template-based semantic commands
+    description: Template-based semantic commands from graph YAML
     priority: medium
     status: pending
     estimated_hours: 8
-    depends_on: [parser_registry]
+    depends_on: [wire_semantic_to_app]
     component: SemanticCommands
-    tags: [semantic, phase2]
-    
-  # === Phase 3: Advanced UI (Week 5-6) ===
-  
+    tags: [semantic, phase3]
+
   dashboard_view:
     type: Development
-    description: Unified dashboard with all tasks
+    description: Rich dashboard with progress bars, metrics, and project grouping
     priority: high
     status: pending
-    estimated_hours: 10
-    depends_on: [basic_tui, regex_parser]
-    component: DashboardView
+    estimated_hours: 6
+    depends_on: [tui_progress_bars]
+    component: LiveDashboard
     tags: [ui, phase3]
-    
+
   graph_view:
     type: Development
-    description: Visual task graph view
+    description: Visual DAG view of task dependencies
     priority: medium
     status: pending
     estimated_hours: 12
     depends_on: [dashboard_view]
     component: GraphView
     tags: [ui, phase3]
-    
+
   terminal_view:
     type: Development
     description: Full terminal view with semantic controls
@@ -307,38 +416,21 @@ tasks:
     depends_on: [semantic_commands]
     component: TerminalView
     tags: [ui, phase3]
-    
-  progress_tracking:
-    type: Development
-    description: Real-time progress tracking and ETA
-    priority: high
-    status: pending
-    estimated_hours: 10
-    depends_on: [regex_parser]
-    tags: [features, phase3]
-    
-  # === Documentation & Testing ===
-  
-  write_docs:
-    type: Documentation
-    description: Write comprehensive documentation
-    priority: medium
-    status: pending
-    estimated_hours: 12
-    depends_on: [dashboard_view]
-    tags: [docs, ongoing]
-    
+
+  # === Testing ===
+
   write_tests:
     type: Testing
-    description: Unit and integration tests
+    description: Comprehensive unit and integration tests
     priority: high
     status: pending
-    estimated_hours: 20
+    estimated_hours: 12
+    depends_on: [fix_async_blocking]
     tags: [testing, ongoing]
-    
+
   integration_test:
     type: Testing
-    description: End-to-end integration tests
+    description: End-to-end integration tests with real commands
     priority: medium
     status: pending
     estimated_hours: 8
@@ -350,35 +442,50 @@ tasks:
 # ============================================================
 
 milestones:
-  mvp:
-    name: MVP - Core Functionality
-    description: Basic terminal management with simple TUI
-    target_date: 2026-02-14
-    tasks: 
+  foundation:
+    name: Foundation - Core Functionality
+    description: Basic terminal management with TUI
+    target_date: 2026-01-31
+    status: done
+    tasks:
       - setup_rust_project
       - implement_graph_parser
       - implement_pty_manager
       - implement_scheduler
       - basic_tui
-      
-  semantic:
-    name: Semantic Layer
-    description: Output parsing and semantic commands
-    target_date: 2026-02-28
+      - gid_integration
+      - session_persistence
+      - multi_project_workspace
+
+  bugfix:
+    name: Critical Bug Fixes
+    description: Fix PTY blocking, process lifecycle, command parsing
+    target_date: 2026-02-01
+    status: active
     tasks:
-      - parser_registry
-      - regex_parser
-      - ml_training_parser
+      - fix_command_execution
+      - fix_process_lifecycle
+      - fix_async_blocking
+      - cap_output_history
+      - use_status_enum
+      - remove_dead_code
+
+  semantic_integration:
+    name: Semantic Layer Integration
+    description: Connect parsers to execution pipeline and TUI
+    target_date: 2026-02-07
+    tasks:
+      - wire_semantic_to_app
+      - tui_progress_bars
       - semantic_commands
-      
+
   v1:
     name: Version 1.0
     description: Complete feature set with advanced UI
-    target_date: 2026-03-15
+    target_date: 2026-03-01
     tasks:
       - dashboard_view
       - graph_view
       - terminal_view
-      - progress_tracking
-      - write_docs
+      - write_tests
       - integration_test

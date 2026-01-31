@@ -99,7 +99,10 @@ async fn main() -> Result<()> {
     }
 
     log::info!("Shutting down...");
-    
+
+    // Stop all running tasks
+    app.executor.stop_all();
+
     // End session and save
     app.session.end();
     if let Err(e) = app.session.save() {
