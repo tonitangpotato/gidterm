@@ -86,10 +86,10 @@ fn main() -> Result<()> {
     // Summary
     let total = scheduler.graph().all_tasks().len();
     let done = scheduler.graph().all_tasks().values()
-        .filter(|t| t.status == "done")
+        .filter(|t| t.status == gidterm::GraphTaskStatus::Done)
         .count();
     let failed = scheduler.graph().all_tasks().values()
-        .filter(|t| t.status == "failed")
+        .filter(|t| t.status == gidterm::GraphTaskStatus::Failed)
         .count();
     
     println!("📈 Summary:");

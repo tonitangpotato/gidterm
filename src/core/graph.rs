@@ -3,13 +3,46 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 use std::path::Path;
+
+/// Task status enum — replaces raw status strings
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum GraphTaskStatus {
+    Pending,
+    #[serde(alias = "in-progress")]
+    InProgress,
+    Done,
+    Failed,
+    Planned,
+}
+
+impl Default for GraphTaskStatus {
+    fn default() -> Self {
+        Self::Pending
+    }
+}
+
+impl fmt::Display for GraphTaskStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Pending => write!(f, "pending"),
+            Self::InProgress => write!(f, "in-progress"),
+            Self::Done => write!(f, "done"),
+            Self::Failed => write!(f, "failed"),
+            Self::Planned => write!(f, "planned"),
+        }
+    }
+}
 
 /// Task graph representation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Graph {
     pub metadata: Option<Metadata>,
+    #[serde(default)]
     pub nodes: HashMap<String, Node>,
+    #[serde(default)]
     pub tasks: HashMap<String, Task>,
 }
 
@@ -34,16 +67,18 @@ pub struct Node {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Task {
-    #[serde(rename = "type")]
+    #[serde(rename = "type", default)]
     pub task_type: String,
     pub description: String,
     pub command: Option<String>,
-    pub status: String,
+    #[serde(default)]
+    pub status: GraphTaskStatus,
     pub priority: Option<String>,
     pub depends_on: Option<Vec<String>>,
     pub component: Option<String>,
     pub estimated_hours: Option<u32>,
     pub tags: Option<Vec<String>>,
+    pub semantic_commands: Option<HashMap<String, String>>,
 }
 
 impl Graph {
@@ -91,7 +126,7 @@ impl Graph {
         self.tasks
             .iter()
             .filter_map(|(id, task)| {
-                if self.can_start(id) && task.status == "pending" {
+                if self.can_start(id) && task.status == GraphTaskStatus::Pending {
                     Some(id.clone())
                 } else {
                     None
@@ -115,15 +150,15 @@ impl Graph {
         deps.iter().all(|dep_id| {
             self.tasks
                 .get(dep_id)
-                .map(|dep_task| dep_task.status == "done")
+                .map(|dep_task| dep_task.status == GraphTaskStatus::Done)
                 .unwrap_or(false)
         })
     }
 
     /// Update task status
-    pub fn update_task_status(&mut self, task_id: &str, new_status: &str) -> Result<()> {
+    pub fn update_task_status(&mut self, task_id: &str, new_status: GraphTaskStatus) -> Result<()> {
         if let Some(task) = self.tasks.get_mut(task_id) {
-            task.status = new_status.to_string();
+            task.status = new_status;
             Ok(())
         } else {
             anyhow::bail!("Task {} not found", task_id)

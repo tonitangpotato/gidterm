@@ -29,36 +29,6 @@ nodes:
     description: Session persistence and task history tracking across runs
     status: active
     priority: supporting
-  MultiProjectDX:
-    type: Feature
-    description: Multi-Project DX improvements - unified dashboard, port management, notifications, agent integration (RFC based on Theo tweet pain points)
-    status: in_progress
-    priority: supporting
-    tags: [dx, multi-project, rfc]
-    doc: docs/rfc-multi-project-dx.md
-  UnifiedDashboard:
-    type: Component
-    description: Project overview view showing all projects at a glance with status, port, task pipeline
-    layer: interface
-    status: active
-    path: src/ui/views/project_overview.rs
-  PortManager:
-    type: Component
-    description: Port allocation and registry system for multi-project development (~/.gidterm/ports.json)
-    layer: infrastructure
-    status: active
-    path: src/ports.rs
-  NotificationSystem:
-    type: Component
-    description: macOS system notifications for task completion, errors, and waiting states
-    layer: infrastructure
-    status: active
-    path: src/notifications.rs
-  QuickSwitch:
-    type: Feature
-    description: Keyboard shortcuts (1-9, /, ←→) for rapid project switching and search
-    status: active
-    priority: supporting
   GraphParser:
     type: Component
     description: Parse .gid/graph.yml and build task DAG
@@ -350,36 +320,5 @@ edges:
     to: TerminalUI
     relation: implements
   - from: ComparisonView
-    to: AppState
-    relation: depends_on
-  - from: EventStream
-    to: ParserRegistry
-    relation: depends_on
-  # Phase 1: Multi-Project DX edges
-  - from: UnifiedDashboard
-    to: MultiProjectDX
-    relation: implements
-  - from: PortManager
-    to: MultiProjectDX
-    relation: implements
-  - from: NotificationSystem
-    to: MultiProjectDX
-    relation: implements
-  - from: QuickSwitch
-    to: MultiProjectDX
-    relation: implements
-  - from: UnifiedDashboard
-    to: TUIController
-    relation: depends_on
-  - from: UnifiedDashboard
-    to: AppState
-    relation: depends_on
-  - from: PortManager
-    to: AppState
-    relation: enables
-  - from: NotificationSystem
-    to: AppState
-    relation: enables
-  - from: QuickSwitch
     to: AppState
     relation: depends_on

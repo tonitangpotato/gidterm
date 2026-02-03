@@ -2,9 +2,14 @@
 
 mod dashboard;
 mod live;
+pub mod views;
 
 pub use dashboard::DashboardView;
 pub use live::render_live_dashboard;
+pub use views::comparison::render_comparison_view;
+pub use views::graph::render_graph_view;
+pub use views::project_overview::render_project_overview;
+pub use views::terminal::render_terminal_view;
 
 use anyhow::Result;
 use crossterm::{

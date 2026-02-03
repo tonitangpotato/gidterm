@@ -1,6 +1,6 @@
 //! Task Scheduler - DAG-based task dependency scheduling
 
-use super::Graph;
+use super::{Graph, GraphTaskStatus};
 use anyhow::Result;
 use std::collections::HashSet;
 
@@ -32,21 +32,21 @@ impl Scheduler {
 
     /// Mark task as started
     pub fn mark_started(&mut self, task_id: &str) -> Result<()> {
-        self.graph.update_task_status(task_id, "in-progress")?;
+        self.graph.update_task_status(task_id, GraphTaskStatus::InProgress)?;
         self.running.insert(task_id.to_string());
         Ok(())
     }
 
     /// Mark task as completed
     pub fn mark_done(&mut self, task_id: &str) -> Result<()> {
-        self.graph.update_task_status(task_id, "done")?;
+        self.graph.update_task_status(task_id, GraphTaskStatus::Done)?;
         self.running.remove(task_id);
         Ok(())
     }
 
     /// Mark task as failed
     pub fn mark_failed(&mut self, task_id: &str) -> Result<()> {
-        self.graph.update_task_status(task_id, "failed")?;
+        self.graph.update_task_status(task_id, GraphTaskStatus::Failed)?;
         self.running.remove(task_id);
         Ok(())
     }
@@ -68,6 +68,6 @@ impl Scheduler {
                 .graph
                 .all_tasks()
                 .values()
-                .all(|task| task.status == "done" || task.status == "failed")
+                .all(|task| task.status == GraphTaskStatus::Done || task.status == GraphTaskStatus::Failed)
     }
 }

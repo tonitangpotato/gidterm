@@ -1,105 +1,34 @@
 metadata:
-  project: "AgentVerse MVP Test"
-  version: "0.1.0"
-  description: "Testing gidterm with AgentVerse tasks"
-
-nodes:
-  database:
-    type: "infrastructure"
-    description: "Database layer"
-    layer: "infrastructure"
-    status: "pending"
-    priority: "critical"
-  
-  backend:
-    type: "service"
-    description: "Backend API service"
-    layer: "backend"
-    status: "pending"
-    priority: "high"
-    depends_on: ["database"]
-  
-  frontend:
-    type: "service"
-    description: "Frontend web app"
-    layer: "frontend"
-    status: "pending"
-    priority: "high"
+  project: demo-pipeline
+  version: "1.0"
 
 tasks:
-  start-postgres:
-    type: "service"
-    description: "Start PostgreSQL database"
-    command: "docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=dev postgres:15"
-    status: "pending"
-    priority: "critical"
-    component: "database"
-    tags: ["infrastructure", "database"]
-  
-  start-redis:
-    type: "service"
-    description: "Start Redis cache"
-    command: "docker run -d -p 6379:6379 redis:7"
-    status: "pending"
-    priority: "high"
-    component: "database"
-    tags: ["infrastructure", "cache"]
-  
-  backend-install:
-    type: "build"
-    description: "Install backend dependencies"
-    command: "cd backend && npm install"
-    status: "pending"
-    priority: "high"
-    depends_on: []
-    component: "backend"
-    estimated_hours: 1
-    tags: ["setup"]
-  
-  backend-migrate:
-    type: "build"
-    description: "Run database migrations"
-    command: "cd backend && npm run migrate"
-    status: "pending"
-    priority: "high"
-    depends_on: ["start-postgres", "backend-install"]
-    component: "backend"
-    tags: ["database"]
-  
-  backend-server:
-    type: "service"
-    description: "Start backend dev server"
-    command: "cd backend && npm run dev"
-    status: "pending"
-    priority: "high"
-    depends_on: ["backend-migrate", "start-redis"]
-    component: "backend"
-    tags: ["dev"]
-  
-  frontend-install:
-    type: "build"
-    description: "Install frontend dependencies"
-    command: "cd frontend && npm install"
-    status: "pending"
-    priority: "medium"
-    component: "frontend"
-    tags: ["setup"]
-  
-  frontend-server:
-    type: "service"
-    description: "Start frontend dev server"
-    command: "cd frontend && npm run dev"
-    status: "pending"
-    priority: "medium"
-    depends_on: ["frontend-install"]
-    component: "frontend"
-    tags: ["dev"]
-  
-  run-tests:
-    type: "test"
-    description: "Run integration tests"
-    command: "npm run test"
-    status: "pending"
-    priority: "medium"
-    depends_on: ["backend-server", "frontend-server"]
-    tags: ["testing"]
+  setup:
+    description: Install dependencies
+    command: "echo '[1/5] resolving packages...' && sleep 1 && echo '[2/5] downloading...' && sleep 1 && echo '[3/5] extracting...' && sleep 1 && echo '[4/5] compiling native deps...' && sleep 1 && echo '[5/5] linking...' && echo 'Setup complete.'"
+    status: pending
+
+  build:
+    description: Build the project
+    command: "echo 'Compiling project...' && sleep 1 && echo 'Compiling core (1/8)' && sleep 0.5 && echo 'Compiling utils (2/8)' && sleep 0.5 && echo 'Compiling parser (3/8)' && sleep 0.5 && echo 'Compiling semantic (4/8)' && sleep 0.5 && echo 'Compiling ui (5/8)' && sleep 0.5 && echo 'Compiling views (6/8)' && sleep 0.5 && echo 'Compiling app (7/8)' && sleep 0.5 && echo 'Compiling main (8/8)' && sleep 0.5 && echo 'warning: unused variable x' && echo 'Finished release target in 4.2s' && echo 'Build complete: 0 errors, 1 warning'"
+    status: pending
+    depends_on: [setup]
+
+  train_model:
+    description: Train ResNet model
+    command: "for i in $(seq 1 15); do loss=$(echo \"scale=4; 2.0 - ($i * 0.11)\" | bc); acc=$(echo \"scale=4; 0.4 + ($i * 0.035)\" | bc); echo \"Epoch $i/15 | Loss: $loss | Accuracy: $acc | LR: 0.001\"; sleep 1; done; echo 'Training complete.'"
+    status: pending
+    depends_on: [setup]
+    task_type: ml_training
+
+  test:
+    description: Run test suite
+    command: "echo 'Running tests...' && sleep 1 && echo 'test core::graph ... ok' && sleep 0.3 && echo 'test semantic::parser ... ok' && sleep 0.3 && echo 'test ui::dashboard ... ok' && sleep 0.3 && echo 'test integration::e2e ... ok' && sleep 0.3 && echo '' && echo 'test result: ok. 4 passed; 0 failed; 0 ignored' && echo 'Tests complete.'"
+    status: pending
+    depends_on: [build]
+
+  deploy:
+    description: Deploy to production
+    command: "echo 'Deploying...' && echo '10% uploading assets' && sleep 1 && echo '30% pushing container' && sleep 1 && echo '50% running migrations' && sleep 1 && echo '70% health check' && sleep 1 && echo '90% switching traffic' && sleep 1 && echo '100% done' && echo 'Deployed successfully.'"
+    status: pending
+    depends_on: [test, train_model]

@@ -1,6 +1,6 @@
 //! Dashboard view - Unified task status display
 
-use crate::core::Graph;
+use crate::core::{Graph, GraphTaskStatus};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -50,18 +50,20 @@ impl DashboardView {
             .all_tasks()
             .iter()
             .map(|(id, task)| {
-                let status_icon = match task.status.as_str() {
-                    "done" => "✓",
-                    "in-progress" => "⚙",
-                    "failed" => "✗",
-                    _ => "□",
+                let status_icon = match task.status {
+                    GraphTaskStatus::Done => "✓",
+                    GraphTaskStatus::InProgress => "⚙",
+                    GraphTaskStatus::Failed => "✗",
+                    GraphTaskStatus::Pending => "□",
+                    GraphTaskStatus::Planned => "○",
                 };
 
-                let status_color = match task.status.as_str() {
-                    "done" => Color::Green,
-                    "in-progress" => Color::Yellow,
-                    "failed" => Color::Red,
-                    _ => Color::Gray,
+                let status_color = match task.status {
+                    GraphTaskStatus::Done => Color::Green,
+                    GraphTaskStatus::InProgress => Color::Yellow,
+                    GraphTaskStatus::Failed => Color::Red,
+                    GraphTaskStatus::Pending => Color::Gray,
+                    GraphTaskStatus::Planned => Color::DarkGray,
                 };
 
                 let priority_badge = task.priority.as_ref().map(|p| match p.as_str() {

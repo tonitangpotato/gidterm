@@ -1,5 +1,8 @@
 //! Semantic layer - Output parsing and semantic commands
 
+pub mod advisor;
+pub mod commands;
+pub mod history;
 pub mod parsers;
 pub mod registry;
 

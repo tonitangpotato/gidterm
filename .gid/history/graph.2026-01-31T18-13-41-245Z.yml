@@ -12,12 +12,12 @@ nodes:
   SemanticLayer:
     type: Feature
     description: Semantic understanding of task output - parsers, metrics extraction, commands
-    status: active
+    status: in_progress
     priority: core
   TerminalUI:
     type: Feature
     description: Terminal UI with live dashboard, graph view, and terminal view
-    status: active
+    status: in_progress
     priority: core
   MultiProjectWorkspace:
     type: Feature
@@ -27,36 +27,6 @@ nodes:
   SessionPersistence:
     type: Feature
     description: Session persistence and task history tracking across runs
-    status: active
-    priority: supporting
-  MultiProjectDX:
-    type: Feature
-    description: Multi-Project DX improvements - unified dashboard, port management, notifications, agent integration (RFC based on Theo tweet pain points)
-    status: in_progress
-    priority: supporting
-    tags: [dx, multi-project, rfc]
-    doc: docs/rfc-multi-project-dx.md
-  UnifiedDashboard:
-    type: Component
-    description: Project overview view showing all projects at a glance with status, port, task pipeline
-    layer: interface
-    status: active
-    path: src/ui/views/project_overview.rs
-  PortManager:
-    type: Component
-    description: Port allocation and registry system for multi-project development (~/.gidterm/ports.json)
-    layer: infrastructure
-    status: active
-    path: src/ports.rs
-  NotificationSystem:
-    type: Component
-    description: macOS system notifications for task completion, errors, and waiting states
-    layer: infrastructure
-    status: active
-    path: src/notifications.rs
-  QuickSwitch:
-    type: Feature
-    description: Keyboard shortcuts (1-9, /, ←→) for rapid project switching and search
     status: active
     priority: supporting
   GraphParser:
@@ -105,13 +75,13 @@ nodes:
     type: Component
     description: Parse build task output (compilation steps, warnings, errors)
     layer: application
-    status: active
+    status: draft
     path: src/semantic/parsers/build.rs
   SemanticCommands:
     type: Component
     description: Template-based semantic command execution from graph YAML
     layer: application
-    status: active
+    status: draft
     path: src/semantic/commands.rs
   TUIController:
     type: Component
@@ -129,20 +99,18 @@ nodes:
     type: Component
     description: Rich dashboard with full metrics, project grouping, ETA
     layer: interface
-    status: active
+    status: draft
     path: src/ui/dashboard.rs
   GraphView:
     type: Component
     description: Visual DAG view of task dependencies in TUI
     layer: interface
-    status: active
-    path: src/ui/views/graph.rs
+    status: draft
   TerminalView:
     type: Component
     description: Full-screen terminal view with semantic controls
     layer: interface
-    status: active
-    path: src/ui/views/terminal.rs
+    status: draft
   AppState:
     type: Component
     description: Application state, event loop, key handling
@@ -168,36 +136,7 @@ nodes:
   IntegrationTests:
     type: Test
     description: End-to-end integration tests with real commands
-    status: active
-  AIIntegration:
-    type: Feature
-    description: AI integration layer for manual TUI, Claude Code MCP, and clawdbot automation modes
-    status: active
-    priority: core
-  ControlAPI:
-    type: Component
-    description: Unified control interface trait with ControlMode, ControlCommand, ControlResponse, StateSnapshot
-    layer: application
-    status: active
-    path: src/ai/control.rs
-  EventStream:
-    type: Component
-    description: Broadcast-based JSON event streaming for AI consumers with GidEvent types
-    layer: application
-    status: active
-    path: src/ai/events.rs
-  ClapCLI:
-    type: Component
-    description: 'Clap-based CLI with subcommands: run, status, init, history, start'
-    layer: interface
-    status: active
-    path: src/main.rs
-  ComparisonView:
-    type: Component
-    description: Cross-task comparison table with dynamic metrics, best-value highlighting
-    layer: interface
-    status: active
-    path: src/ui/views/comparison.rs
+    status: draft
 edges:
   - from: GraphParser
     to: CoreEngine
@@ -331,55 +270,3 @@ edges:
   - from: IntegrationTests
     to: SemanticLayer
     relation: validates
-  - from: ControlAPI
-    to: AIIntegration
-    relation: implements
-  - from: EventStream
-    to: AIIntegration
-    relation: implements
-  - from: ControlAPI
-    to: AppState
-    relation: depends_on
-  - from: ClapCLI
-    to: AppState
-    relation: depends_on
-  - from: ClapCLI
-    to: CoreEngine
-    relation: implements
-  - from: ComparisonView
-    to: TerminalUI
-    relation: implements
-  - from: ComparisonView
-    to: AppState
-    relation: depends_on
-  - from: EventStream
-    to: ParserRegistry
-    relation: depends_on
-  # Phase 1: Multi-Project DX edges
-  - from: UnifiedDashboard
-    to: MultiProjectDX
-    relation: implements
-  - from: PortManager
-    to: MultiProjectDX
-    relation: implements
-  - from: NotificationSystem
-    to: MultiProjectDX
-    relation: implements
-  - from: QuickSwitch
-    to: MultiProjectDX
-    relation: implements
-  - from: UnifiedDashboard
-    to: TUIController
-    relation: depends_on
-  - from: UnifiedDashboard
-    to: AppState
-    relation: depends_on
-  - from: PortManager
-    to: AppState
-    relation: enables
-  - from: NotificationSystem
-    to: AppState
-    relation: enables
-  - from: QuickSwitch
-    to: AppState
-    relation: depends_on

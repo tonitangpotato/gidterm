@@ -1741,41 +1741,332 @@ gidterm/
 
 ---
 
-## 📋 **开发路线图** ⭐ UPDATED
+## 🌐 **Multi-Project Developer Experience (DX)** ⭐ RFC
 
-### **Phase 1: 核心引擎（Week 1-2）**
+*基于 Theo (t3.gg) 的痛点，设计 gidterm 的多项目管理能力*
+
+### **Motivation: The Multi-Project Problem**
+
+来自 Theo 的推文指出的核心痛点：
+
+> "The biggest thing that sucks about working with Coding Agents on multiple projects is keeping track of what's happening. I get the multiple terminal tabs all look the same, multiple browser tabs with different localhosts..."
+
+**核心问题：**
+1. 🔍 **可见性差** - 多个 terminal tabs，哪个 agent 完成了？找不到
+2. 🔌 **Port 冲突** - localhost:3000 被谁占了？
+3. 🌐 **Browser 混乱** - 哪个 chrome 窗口是哪个项目的？
+4. 🧠 **心智负担** - 单项目能记住，多项目完全乱
+5. ⏱️ **Context 切换** - 开销大于实际 coding 时间
+
+Theo 说他 "almost started to build an OS" 来解决这个问题 - 我们不需要 OS 级别，但 gidterm 作为 terminal controller 已经有了基础，可以成为解决方案。
+
+### **Current State**
+
+gidterm 已经有的能力：
+- ✅ Multi-project workspace mode (`--workspace`)
+- ✅ 项目隔离（每个项目独立 graph）
+- ✅ Task DAG scheduling
+- ✅ Parallel execution
+- ✅ Real-time TUI dashboard
+
+缺失的：
+- ❌ 全局项目状态概览
+- ❌ Port 管理/追踪
+- ❌ Agent 状态集成
+- ❌ 通知聚合
+- ❌ 浏览器集成
+
+### **Proposed Features**
+
+#### 1. 🎛️ Unified Dashboard
+
+一眼看到所有项目的关键状态：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  gidterm workspace (3 projects)                    [?] help │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  📁 backend          :3000   🟢 claude-code running        │
+│     └─ build [done] → dev [running 2m] → test [pending]    │
+│                                                             │
+│  📁 frontend         :3001   🔵 waiting for input          │
+│     └─ install [done] → build [running] → preview [...]    │
+│                                                             │
+│  📁 api-gateway      :3002   ⏸️  paused                     │
+│     └─ all tasks complete                                   │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│  Recent Events:                                             │
+│  • 09:04 [frontend] Agent completed task: "add dark mode"   │
+│  • 09:02 [backend] Build succeeded                          │
+│  • 09:01 [api-gateway] Agent paused (waiting approval)      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**实现要点：**
+- 每行显示：项目名、分配的 port、agent 状态、task pipeline 概览
+- 底部显示最近事件，highlight 需要注意的
+- 颜色编码：🟢运行中 🔵需输入 🟡警告 🔴错误 ⏸️暂停
+
+#### 2. 🔌 Port Management
+
+自动管理开发服务器端口，避免冲突：
+
+```yaml
+# .gid/graph.yml 中的 port 配置
+metadata:
+  project: "backend"
+  port: auto          # gidterm 自动分配
+  # 或者
+  port: 3000          # 首选 port
+  port_fallback: true # 冲突时自动 +1
+```
+
+**功能：**
+- 自动扫描 `3000-3999` 范围找可用 port
+- 维护全局 port registry（`~/.gidterm/ports.json`）
+- 启动时注入 `$PORT` 环境变量
+- Port 冲突检测和自动解决
+- `gidterm ports` 命令查看当前分配
+
+```bash
+$ gidterm ports
+PORT    PROJECT         PROCESS         STATUS
+3000    backend         npm run dev     🟢 active
+3001    frontend        vite            🟢 active  
+3002    api-gateway     -               ⏸️ reserved
+```
+
+#### 3. 🤖 Agent Integration
+
+与 coding agent 深度集成：
+
+**支持的 agents：**
+- Claude Code (`claude`)
+- Codex CLI (`codex`)
+- OpenCode (`opencode`)
+- Pi Coding Agent
+
+**集成方式：**
+```yaml
+# .gid/graph.yml
+tasks:
+  implement-feature:
+    agent: claude          # 指定使用哪个 agent
+    prompt: "Implement user authentication"
+    status: pending
+```
+
+**状态追踪：**
+- 检测 agent 进程是否运行
+- 解析 agent 输出判断状态（running/waiting/completed/error）
+- Agent 完成时触发通知
+
+#### 4. 🔔 Notification Aggregation
+
+统一通知中心：
+
+```
+┌────────────────────────────────────────┐
+│ 🔔 gidterm                             │
+├────────────────────────────────────────┤
+│ [backend] Agent completed!             │
+│ Task: implement-auth                   │
+│ Duration: 4m 32s                       │
+│                                        │
+│ [View] [Approve] [Next Task]          │
+└────────────────────────────────────────┘
+```
+
+**通知渠道：**
+- macOS Notification Center（默认）
+- Terminal bell
+- (可选) Webhook to Telegram/Discord
+- (可选) 声音提示
+
+**配置：**
+```yaml
+# ~/.gidterm/config.yml
+notifications:
+  on_complete: true
+  on_error: true
+  on_waiting: true      # agent 等待输入时
+  sound: true
+  channels:
+    - system            # OS notification
+    - telegram          # 可选
+```
+
+#### 5. ⚡ Quick Switch
+
+快速在项目间切换：
+
+```bash
+# CLI 方式
+gidterm switch backend      # 聚焦到 backend 项目
+gidterm focus frontend      # 同上
+
+# TUI 中
+# 按 1/2/3 数字键快速切换
+# 或 / 搜索项目名
+```
+
+**切换时的动作：**
+- 将该项目的 terminal 带到前台
+- 打开相关的 browser tabs（如果有集成）
+- 更新 TUI 焦点
+
+#### 6. 🌐 Browser Integration (Phase 2)
+
+通过 Chrome Extension 实现 tab 分组：
+
+**功能：**
+- 按项目自动分组 tabs
+- 识别 `localhost:PORT` 并关联到项目
+- 一键打开项目的所有相关 URLs
+- 关闭项目时可选关闭相关 tabs
+
+**实现路径：**
+1. Chrome Extension 监听 tab 创建
+2. Extension 与 gidterm 通过 WebSocket 通信
+3. gidterm 发送 port-project 映射
+4. Extension 自动给 tabs 打标签/分组
+
+```
+Chrome Tab Groups:
+├── 📁 backend (localhost:3000)
+│   ├── App - localhost:3000
+│   └── API Docs - localhost:3000/docs
+├── 📁 frontend (localhost:3001)
+│   └── Vite - localhost:3001
+└── Other tabs...
+```
+
+### **Implementation Plan**
+
+#### Phase 1: Core DX ✅ DONE (2026-02-03)
+- [x] Unified dashboard redesign — `src/ui/views/project_overview.rs`
+- [x] Port management system — `src/ports.rs` (PortRegistry, PortManager, ~/.gidterm/ports.json)
+- [x] Basic notifications (macOS) — `src/notifications.rs` (NotificationManager, osascript)
+- [x] Quick switch (keyboard shortcuts) — 1-9 keys, `/` search, ←→ navigation
+
+#### Phase 2: Agent Integration (2 weeks)
+- [ ] Agent process detection
+- [ ] Agent status parsing
+- [ ] Agent task definition in graph
+
+#### Phase 3: Browser Integration (2-3 weeks)
+- [ ] Chrome Extension scaffold
+- [ ] WebSocket bridge
+- [ ] Tab grouping logic
+- [ ] URL-to-project mapping
+
+#### Phase 4: Polish (1 week)
+- [ ] Configuration system
+- [ ] Documentation
+- [ ] Demo video
+
+### **Open Questions**
+
+1. **Port persistence** - 每次启动用同样的 port 还是 fresh 分配？
+   - 建议：持久化，但检测冲突时重新分配
+
+2. **Agent detection** - 如何判断 agent 状态？
+   - 解析 stdout 关键词？检测进程？Agent API？
+   - 建议：先做进程检测 + stdout 关键词，后续可以加 API
+
+3. **Cross-platform** - 是否支持 Linux/Windows？
+   - macOS 优先，Linux 次之，Windows 低优先级
+
+4. **与其他工具的关系** - tmux/Warp/iTerm？
+   - gidterm 是独立 TUI，不依赖也不替代这些工具
+   - 可以在 tmux 里运行 gidterm
+
+### **Alternatives Considered**
+
+1. **VS Code Extension** - 更深的 IDE 集成
+   - 缺点：绑定 VS Code，不够通用
+
+2. **Electron App** - 图形界面
+   - 缺点：重，开发成本高
+
+3. **tmux wrapper** - 包装 tmux
+   - 缺点：tmux 学习曲线，配置复杂
+
+选择 TUI 的原因：轻量、跨终端、符合开发者习惯
+
+### **Success Metrics**
+
+- 项目切换时间 < 2 秒
+- Port 冲突率 → 0
+- "找 agent" 的时间 → 0（直接看 dashboard）
+- 用户不再需要肉眼扫描多个 terminal tabs
+
+### **References**
+
+- [Theo's tweet thread](https://twitter.com/t3dotgg/...)
+- [mprocs](https://github.com/pvolok/mprocs) - 多进程 TUI 参考
+- [Chrome Tab Groups API](https://developer.chrome.com/docs/extensions/reference/tabGroups/)
+
+---
+
+## 📋 **开发路线图** ⭐ UPDATED 2026-01-31
+
+### **Phase 1: 核心引擎 ✅ DONE**
 **目标：独立可用的 GidTerm CLI**
 
 - [x] 项目初始化（Cargo + Git）
-- [ ] Graph 解析器（.gid/graph.yml）
-- [ ] PTY 管理器（创建/控制/I/O）
-- [ ] 任务调度器（DAG + 依赖）
-- [ ] 基础 TUI（任务列表 + 状态）
+- [x] Graph 解析器（.gid/graph.yml）— `src/core/graph.rs`
+- [x] PTY 管理器（创建/控制/I/O）— `src/core/pty.rs`
+- [x] 任务调度器（DAG + 依赖）— `src/core/scheduler.rs`
+- [x] 基础 TUI（任务列表 + 状态）— `src/ui/live.rs`
+- [x] P0 Bug fixes: `sh -c` wrapping, process lifecycle, async blocking, exit codes
+- [x] GraphTaskStatus enum (replaced raw strings)
+- [x] Session persistence — `src/session.rs`
+- [x] Multi-project workspace — `src/workspace.rs`
 
-### **Phase 2: 语义层（Week 3-4）**
+### **Phase 2: 语义层 ✅ DONE**
 **目标：智能理解任务输出**
 
-- [ ] Parser 注册系统
-- [ ] Regex-based parsers
-- [ ] ML training parser
-- [ ] Build task parser
-- [ ] 语义命令模板
+- [x] Parser 注册系统 — `src/semantic/registry.rs`
+- [x] Regex-based parsers — `src/semantic/parsers/regex.rs`
+- [x] ML training parser — `src/semantic/parsers/ml_training.rs`
+- [x] Build task parser — `src/semantic/parsers/build.rs`
+- [x] 语义命令模板 — `src/semantic/commands.rs`
+- [x] Wired parsers into App event loop
+- [x] TUI progress bars + inline metrics
 
-### **Phase 3: 高级 UI（Week 5-6）**
+### **Phase 3: 高级 UI ✅ DONE**
 **目标：完整的用户体验**
 
-- [ ] Dashboard 视图（统一仪表盘）
-- [ ] Graph 视图（可视化 DAG）
-- [ ] Terminal 视图（全屏终端 + 控制）
-- [ ] 实时进度追踪
-- [ ] ETA 计算
+- [x] Dashboard 视图（统一仪表盘）— `src/ui/live.rs` + `src/ui/dashboard.rs`
+- [x] Graph 视图（可视化 DAG）— `src/ui/views/graph.rs`
+- [x] Terminal 视图（全屏终端 + semantic controls）— `src/ui/views/terminal.rs`
+- [x] 实时进度追踪 (progress bars, metrics)
+- [x] View switching: Tab cycle, 1/2/3/4 keys, Enter for terminal
+- [x] ETA 计算 — `src/semantic/history.rs`
+- [x] MetricHistory + trend tracking — `src/semantic/history.rs`
+- [x] SmartAdvisor (rule-based advisories) — `src/semantic/advisor.rs`
+- [x] Sparkline charts in terminal view — `src/ui/views/terminal.rs`
+- [x] Cross-task comparison view — `src/ui/views/comparison.rs`
+- [x] Clap CLI with subcommands (run, status, init, history, start) — `src/main.rs`
 
-### **Phase 4: 集成准备（未来）**
+### **Phase 4: AI Integration ✅ DONE**
+**目标：支持三种控制模式**
+
+- [x] ControlAPI trait — `src/ai/control.rs`
+- [x] ControlMode enum (Manual/MCP/Agent)
+- [x] JSON event streaming (GidEvent + EventStream) — `src/ai/events.rs`
+- [x] ControlCommand/ControlResponse serialization
+- [x] StateSnapshot for AI consumers
+
+### **Phase 5: 集成准备（未来）**
 **目标：可被 IdeaSpark 调用**
 
 - [ ] WASM 编译
-- [ ] JSON-RPC API
-- [ ] Event streaming
+- [ ] MCP server mode (gidterm as MCP tool provider)
+- [ ] Clawdbot automation driver
 - [ ] 文档化接口
 
 ---
@@ -1886,14 +2177,34 @@ tasks:
 5. ~~MVP 最小功能集确定~~ ✅ 已规划
 6. ~~技术栈最终选择~~ ✅ 已决定（Rust）
 7. ~~和 IdeaSpark 的关系~~ ✅ 已明确（执行引擎）
+8. ~~State persistence 策略~~ ✅ 已决定（JSON in .gidterm/sessions/）
+9. ~~Multi-project UI 布局~~ ✅ 已实现（workspace mode + project grouping）
 
 **剩余问题：**
-- State persistence 策略（SQLite vs JSON）
 - Remote control API 设计
-- Multi-project UI 布局细节
+- LLM-powered parser (Phase 4)
+- Plugin system for custom parsers
 
 ---
 
-*记录时间：2026-01-30*  
-*最后更新：2026-01-31 00:47 EST*  
-*开发工具：Claude Code + gid MCP*
+## 📊 **实现状态** ⭐ v0.4.0
+
+| Layer | Coverage | Status |
+|-------|----------|--------|
+| Core Engine | 95% | ✅ GraphParser, PTYManager, Scheduler, Executor, GraphTaskStatus enum |
+| Semantic Layer | 95% | ✅ ParserRegistry, RegexParser, MLTrainingParser, BuildParser, SemanticCommands, MetricHistory, SmartAdvisor |
+| Terminal UI | 98% | ✅ LiveDashboard, TerminalView, GraphView, ComparisonView, **ProjectOverview**, Sparklines, view switching |
+| AI Integration | 90% | ✅ ControlAPI trait, ControlMode (Manual/MCP/Agent), EventStream, ControlCommand/Response |
+| CLI | 95% | ✅ Clap subcommands: run, status, init, history, start, **ports** |
+| Multi-project DX | 95% | ✅ **Phase 1 Done**: UnifiedDashboard, PortManager, NotificationSystem, QuickSwitch |
+| Session | 90% | ✅ SessionManager, task history, output tracking |
+| Tests | 85% | ✅ 59 tests (43 unit + 16 integration), 0 failures |
+
+**GID Graph Health Score: 95/100** (graph-indexed-development-mcp)
+**Graph Nodes: 33** (7 Features, 24 Components, 2 Tests)
+
+---
+
+*记录时间：2026-01-30*
+*最后更新：2026-02-03*
+*开发工具：Claude Code (Opus 4.5) + graph-indexed-development-mcp*

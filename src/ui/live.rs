@@ -1,6 +1,7 @@
 //! Live dashboard with real-time updates and semantic metrics
 
 use crate::app::App;
+use crate::core::GraphTaskStatus;
 use crate::semantic::MetricValue;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -48,12 +49,12 @@ fn render_header(f: &mut Frame, app: &App, area: Rect) {
     let done = graph
         .all_tasks()
         .values()
-        .filter(|t| t.status == "done")
+        .filter(|t| t.status == GraphTaskStatus::Done)
         .count();
     let failed = graph
         .all_tasks()
         .values()
-        .filter(|t| t.status == "failed")
+        .filter(|t| t.status == GraphTaskStatus::Failed)
         .count();
 
     let status_text = format!(
@@ -116,18 +117,20 @@ fn render_task_list(f: &mut Frame, app: &App, area: Rect) {
 fn render_task_item<'a>(app: &'a App, task_id: &str, idx: usize) -> ListItem<'a> {
     let task = app.scheduler.graph().get_task(task_id).unwrap();
 
-    let status_icon = match task.status.as_str() {
-        "done" => "✓",
-        "in-progress" => "⚙",
-        "failed" => "✗",
-        _ => "□",
+    let status_icon = match task.status {
+        GraphTaskStatus::Done => "✓",
+        GraphTaskStatus::InProgress => "⚙",
+        GraphTaskStatus::Failed => "✗",
+        GraphTaskStatus::Pending => "□",
+        GraphTaskStatus::Planned => "○",
     };
 
-    let status_color = match task.status.as_str() {
-        "done" => Color::Green,
-        "in-progress" => Color::Yellow,
-        "failed" => Color::Red,
-        _ => Color::Gray,
+    let status_color = match task.status {
+        GraphTaskStatus::Done => Color::Green,
+        GraphTaskStatus::InProgress => Color::Yellow,
+        GraphTaskStatus::Failed => Color::Red,
+        GraphTaskStatus::Pending => Color::Gray,
+        GraphTaskStatus::Planned => Color::DarkGray,
     };
 
     let priority_badge = task
@@ -185,6 +188,11 @@ fn render_task_item<'a>(app: &'a App, task_id: &str, idx: usize) -> ListItem<'a>
             parts.push(format!("⚠ {} errors", metrics.errors.len()));
         }
 
+        // Add ETA
+        if let Some(eta) = app.get_eta(task_id) {
+            parts.push(format!("ETA: {}", eta));
+        }
+
         if parts.is_empty() {
             String::new()
         } else {
@@ -211,7 +219,7 @@ fn render_task_item<'a>(app: &'a App, task_id: &str, idx: usize) -> ListItem<'a>
                 .add_modifier(Modifier::BOLD),
         ),
         Span::raw(priority_badge.to_string()),
-        Span::styled(format!(" [{}]", task.status), Style::default().fg(status_color)),
+        Span::styled(format!(" [{}]", task.status.to_string()), Style::default().fg(status_color)),
         Span::styled(output_count, Style::default().fg(Color::DarkGray)),
         Span::styled(metrics_summary, Style::default().fg(Color::Cyan)),
     ]);
@@ -301,7 +309,7 @@ fn render_output_panel(f: &mut Frame, app: &App, task_id: &str, area: Rect) {
 }
 
 fn render_footer(f: &mut Frame, area: Rect) {
-    let help_text = "q: Quit │ k: Kill task │ r: Refresh │ ↑↓: Select";
+    let help_text = "q: Quit │ k: Kill │ ↑↓: Select │ Enter: Terminal │ Tab: Cycle │ 1-3: Views";
 
     let footer = Paragraph::new(help_text)
         .block(Block::default().borders(Borders::ALL))

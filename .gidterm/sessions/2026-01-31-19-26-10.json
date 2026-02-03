@@ -1,0 +1,108 @@
+{
+  "id": "2026-01-31-19-26-10",
+  "project": "demo-pipeline",
+  "started_at": "2026-01-31T19:26:10.106614Z",
+  "ended_at": null,
+  "tasks": {
+    "evaluate": {
+      "task_id": "evaluate",
+      "runs": [
+        {
+          "started": "2026-01-31T19:26:34.709096Z",
+          "ended": "2026-01-31T19:26:39.827703Z",
+          "status": "Done",
+          "output": [
+            "Loading models...",
+            "Running evaluation on test set...",
+            "ResNet: Acc=0.960 F1=0.955 Params=25.6M",
+            "EfficientNet: Acc=0.952 F1=0.948 Params=5.3M",
+            "=== RESULT: EfficientNet recommended (best accuracy/size ratio) ==="
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "setup": {
+      "task_id": "setup",
+      "runs": [
+        {
+          "started": "2026-01-31T19:26:10.139659Z",
+          "ended": "2026-01-31T19:26:14.191365Z",
+          "status": "Done",
+          "output": [
+            "Installing deps...",
+            "[1/4] downloading...",
+            "[2/4] extracting...",
+            "[3/4] compiling...",
+            "[4/4] done!",
+            "Setup complete."
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "train_model_a": {
+      "task_id": "train_model_a",
+      "runs": [
+        {
+          "started": "2026-01-31T19:26:14.192424Z",
+          "ended": "2026-01-31T19:26:34.707687Z",
+          "status": "Done",
+          "output": [
+            "Epoch 1/20 | Loss: 1.915 | Accuracy: .428 | LR: 0.001",
+            "Epoch 2/20 | Loss: 1.830 | Accuracy: .456 | LR: 0.001",
+            "Epoch 3/20 | Loss: 1.745 | Accuracy: .484 | LR: 0.001",
+            "Epoch 4/20 | Loss: 1.660 | Accuracy: .512 | LR: 0.001",
+            "Epoch 5/20 | Loss: 1.575 | Accuracy: .540 | LR: 0.001",
+            "Epoch 6/20 | Loss: 1.490 | Accuracy: .568 | LR: 0.001",
+            "Epoch 7/20 | Loss: 1.405 | Accuracy: .596 | LR: 0.001",
+            "Epoch 8/20 | Loss: 1.320 | Accuracy: .624 | LR: 0.001",
+            "Epoch 9/20 | Loss: 1.235 | Accuracy: .652 | LR: 0.001",
+            "Epoch 10/20 | Loss: 1.150 | Accuracy: .680 | LR: 0.001",
+            "Epoch 11/20 | Loss: 1.065 | Accuracy: .708 | LR: 0.001",
+            "Epoch 12/20 | Loss: .980 | Accuracy: .736 | LR: 0.001",
+            "Epoch 13/20 | Loss: .895 | Accuracy: .764 | LR: 0.001",
+            "Epoch 14/20 | Loss: .810 | Accuracy: .792 | LR: 0.001",
+            "Epoch 15/20 | Loss: .725 | Accuracy: .820 | LR: 0.001",
+            "Epoch 16/20 | Loss: .640 | Accuracy: .848 | LR: 0.001",
+            "Epoch 17/20 | Loss: .555 | Accuracy: .876 | LR: 0.001",
+            "Epoch 18/20 | Loss: .470 | Accuracy: .904 | LR: 0.001",
+            "Epoch 19/20 | Loss: .385 | Accuracy: .932 | LR: 0.001",
+            "Epoch 20/20 | Loss: .300 | Accuracy: .960 | LR: 0.001",
+            "Training complete. Final model saved."
+          ],
+          "exit_code": 0
+        }
+      ]
+    },
+    "train_model_b": {
+      "task_id": "train_model_b",
+      "runs": [
+        {
+          "started": "2026-01-31T19:26:14.195212Z",
+          "ended": "2026-01-31T19:26:29.517102Z",
+          "status": "Done",
+          "output": [
+            "Epoch 1/15 | Loss: 1.705 | Accuracy: .53 | LR: 0.0005",
+            "Epoch 2/15 | Loss: 1.610 | Accuracy: .56 | LR: 0.0005",
+            "Epoch 3/15 | Loss: 1.515 | Accuracy: .59 | LR: 0.0005",
+            "Epoch 4/15 | Loss: 1.420 | Accuracy: .62 | LR: 0.0005",
+            "Epoch 5/15 | Loss: 1.325 | Accuracy: .65 | LR: 0.0005",
+            "Epoch 6/15 | Loss: 1.230 | Accuracy: .68 | LR: 0.0005",
+            "Epoch 7/15 | Loss: 1.135 | Accuracy: .71 | LR: 0.0005",
+            "Epoch 8/15 | Loss: 1.040 | Accuracy: .74 | LR: 0.0005",
+            "Epoch 9/15 | Loss: .945 | Accuracy: .77 | LR: 0.0005",
+            "Epoch 10/15 | Loss: .850 | Accuracy: .80 | LR: 0.0005",
+            "Epoch 11/15 | Loss: .755 | Accuracy: .83 | LR: 0.0005",
+            "Epoch 12/15 | Loss: .660 | Accuracy: .86 | LR: 0.0005",
+            "Epoch 13/15 | Loss: .565 | Accuracy: .89 | LR: 0.0005",
+            "Epoch 14/15 | Loss: .470 | Accuracy: .92 | LR: 0.0005",
+            "Epoch 15/15 | Loss: .375 | Accuracy: .95 | LR: 0.0005",
+            "Training complete. Final model saved."
+          ],
+          "exit_code": 0
+        }
+      ]
+    }
+  }
+}
